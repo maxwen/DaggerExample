@@ -2,6 +2,7 @@ package com.maxwen.daggerexample.ui;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,6 +23,8 @@ import com.maxwen.daggerexample.data.BuildImageProvider;
 import com.maxwen.daggerexample.data.WeatherProvider;
 import com.maxwen.daggerexample.data.model.BuildImage;
 import com.maxwen.daggerexample.data.model.CurrentWeather;
+import com.maxwen.daggerexample.data.model.ForecastWeather;
+import com.maxwen.daggerexample.data.model.Weather;
 import com.maxwen.daggerexample.di.App;
 import com.maxwen.daggerexample.di.ApplicationComponent;
 
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements BuildImageProvide
     //@Inject
     //BuildImageProvider mProvider;
     private static final int PERMISSIONS_REQUEST_LOCATION = 0;
+    private static final String PATH_TO_WEATHER_FONT = "fonts/weathericons-regular-webfont.ttf";
 
     ApplicationComponent mApplicationComponent;
 
@@ -45,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements BuildImageProvide
             = new SimpleDateFormat("yyyy.MM.dd");
     private TextView mWeatherData;
     private Button mWeatherUpdate;
+    private TextView mWeatherIcon;
+    private Typeface mWeatherFont;
 
     private class BuildImageViewHolder extends RecyclerView.ViewHolder {
         TextView mFileName;
@@ -102,6 +108,9 @@ public class MainActivity extends AppCompatActivity implements BuildImageProvide
                 }
             }
         });
+        mWeatherIcon = findViewById(R.id.weather_icon);
+        mWeatherFont = Typeface.createFromAsset(getAssets(), PATH_TO_WEATHER_FONT);
+        mWeatherIcon.setTypeface(mWeatherFont);
 
         mListView.setHasFixedSize(true);
         layoutManager = new LinearLayoutManager(this);
@@ -138,7 +147,89 @@ public class MainActivity extends AppCompatActivity implements BuildImageProvide
                 weather.getCoord().getLat() + " - " +
                 weather.getCoord().getLon() + "\n" +
                 weather.getWeather().get(0).getMain() + "\n" +
-                weather.getWeather().get(0).getDescription());
+                weather.getWeather().get(0).getDescription() + "\n" +
+                weather.getWeather().get(0).getIcon());
+        setWeatherIcon(weather.getWeather().get(0).getIcon(), mWeatherIcon);
+    }
+
+    private int getWeatherIconForDay(int day) {
+        switch (day) {
+            case 1:
+                return R.id.weather_icon_1;
+            case 2:
+                return R.id.weather_icon_2;
+            case 3:
+                return R.id.weather_icon_3;
+            case 4:
+                return R.id.weather_icon_4;
+            case 5:
+                return R.id.weather_icon_5;
+            default:
+                return -1;
+        }
+    }
+
+    private void setWeatherIcon(String icon, TextView t) {
+        switch (icon) {
+            case "01d":
+                t.setText(R.string.wi_day_sunny);
+                break;
+            case "02d":
+                t.setText(R.string.wi_cloudy_gusts);
+                break;
+            case "03d":
+                t.setText(R.string.wi_cloud_down);
+                break;
+            case "10d":
+                t.setText(R.string.wi_day_rain_mix);
+                break;
+            case "11d":
+                t.setText(R.string.wi_day_thunderstorm);
+                break;
+            case "13d":
+                t.setText(R.string.wi_day_snow);
+                break;
+            case "01n":
+                t.setText(R.string.wi_night_clear);
+                break;
+            case "04d":
+                t.setText(R.string.wi_cloudy);
+                break;
+            case "04n":
+                t.setText(R.string.wi_night_cloudy);
+                break;
+            case "02n":
+                t.setText(R.string.wi_night_cloudy);
+                break;
+            case "03n":
+                t.setText(R.string.wi_night_cloudy_gusts);
+                break;
+            case "10n":
+                t.setText(R.string.wi_night_cloudy_gusts);
+                break;
+            case "11n":
+                t.setText(R.string.wi_night_rain);
+                break;
+            case "13n":
+                t.setText(R.string.wi_night_snow);
+                break;
+        }
+    }
+
+    @Override
+    public void updateForecastWeather(ForecastWeather weather) {
+        int i = 1;
+        for (com.maxwen.daggerexample.data.model.List l : weather.getList()) {
+            for (Weather dayWeather : l.getWeather()) {
+                TextView t = findViewById(getWeatherIconForDay(i));
+                if (t == null) {
+                    continue;
+                }
+                t.setTypeface(mWeatherFont);
+                setWeatherIcon(dayWeather.getIcon(), t);
+            }
+            i++;
+        }
     }
 
     @Override

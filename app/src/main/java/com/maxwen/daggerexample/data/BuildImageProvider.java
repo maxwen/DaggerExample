@@ -2,6 +2,7 @@ package com.maxwen.daggerexample.data;
 
 import android.content.Context;
 import android.os.PatternMatcher;
+import android.util.Log;
 
 import com.maxwen.daggerexample.data.model.BuildImage;
 
@@ -21,6 +22,11 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.net.ssl.HttpsURLConnection;
+
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Predicate;
 
 @Singleton
 public class BuildImageProvider {
@@ -128,6 +134,34 @@ public class BuildImageProvider {
                     }
                 } catch (JSONException e) {
                 } finally {
+                    Observable<BuildImage> listObservable = Observable.fromIterable(imageList).filter(
+                            new Predicate<BuildImage>() {
+                                @Override
+                                public boolean test(BuildImage buildImage) throws Exception {
+                                    return buildImage.getFilename().contains("athene");
+                                }
+                            });
+                    listObservable.subscribe(new Observer<BuildImage>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+
+                        }
+
+                        @Override
+                        public void onNext(BuildImage buildImage) {
+                            Log.d("maxwen", "" + buildImage);
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+
+                        }
+
+                        @Override
+                        public void onComplete() {
+
+                        }
+                    });
                     callback.updateList(imageList);
                 }
             }

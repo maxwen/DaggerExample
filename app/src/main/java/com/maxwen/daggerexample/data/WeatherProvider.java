@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.maxwen.daggerexample.data.model.CurrentWeather;
+import com.maxwen.daggerexample.data.model.ForecastWeather;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,6 +44,8 @@ public class WeatherProvider {
 
     public interface WeatherProviderCallback {
         public void updateCurrentWeather(CurrentWeather weather);
+
+        public void updateForecastWeather(ForecastWeather weather);
     }
 
     public interface LocationCallback {
@@ -122,33 +125,13 @@ public class WeatherProvider {
         }
     }
 
-    public void getCurrentWeather(String city, WeatherProviderCallback callback) {
-        Call<CurrentWeather> call = getWeatherAPI().getCurrentWeatherOfCity(city, "f839981a9e6195410e563ef35d1e7fb4");
-        call.enqueue(new Callback<CurrentWeather>() {
-            @Override
-            public void onResponse(Call<CurrentWeather> call, Response<CurrentWeather> response) {
-                if (response.isSuccessful()) {
-                    CurrentWeather weather = response.body();
-                    callback.updateCurrentWeather(weather);
-                } else {
-                    Log.d("maxwen", "" + response.body());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<CurrentWeather> call, Throwable t) {
-                Log.d("maxwen", "", t);
-            }
-        });
-    }
-
     public void getCurrentWeather(WeatherProviderCallback callback) {
         getCurrentLocation(new LocationCallback() {
             @Override
             public void onLocationAvailable(Location location) {
                 String lat = String.valueOf(location.getLatitude());
                 String lon = String.valueOf(location.getLongitude());
-                Call<CurrentWeather> call = getWeatherAPI().getCurrentWeatherOfLocation(lat, lon, "f839981a9e6195410e563ef35d1e7fb4");
+                Call<CurrentWeather> call = getWeatherAPI().getCurrentWeatherOfLocation(lat, lon, "f839981a9e6195410e563ef35d1e7fb4", "metric");
                 call.enqueue(new Callback<CurrentWeather>() {
                     @Override
                     public void onResponse(Call<CurrentWeather> call, Response<CurrentWeather> response) {
@@ -162,6 +145,24 @@ public class WeatherProvider {
 
                     @Override
                     public void onFailure(Call<CurrentWeather> call, Throwable t) {
+                        Log.d("maxwen", "", t);
+                    }
+                });
+
+                Call<ForecastWeather> call1 = getWeatherAPI().getForecastWeatherOfLocation(lat, lon, "f839981a9e6195410e563ef35d1e7fb4", "metric", 5);
+                call1.enqueue(new Callback<ForecastWeather>() {
+                    @Override
+                    public void onResponse(Call<ForecastWeather> call, Response<ForecastWeather> response) {
+                        if (response.isSuccessful()) {
+                            ForecastWeather weather = response.body();
+                            callback.updateForecastWeather(weather);
+                        } else {
+                            Log.d("maxwen", "" + response.body());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ForecastWeather> call, Throwable t) {
                         Log.d("maxwen", "", t);
                     }
                 });
