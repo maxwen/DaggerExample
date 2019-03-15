@@ -5,28 +5,26 @@ import android.os.PatternMatcher;
 import android.util.Log;
 
 import com.maxwen.daggerexample.data.model.AdapterFactory;
-import com.maxwen.daggerexample.data.model.BuildImage;
 import com.maxwen.daggerexample.data.model.BuildImageFile;
 import com.maxwen.daggerexample.data.model.BuildImageList;
 import com.squareup.moshi.Moshi;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Predicate;
+import io.reactivex.Single;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.moshi.MoshiConverterFactory;
 
 @Singleton
@@ -38,43 +36,13 @@ public class BuildImageProvider {
     private BuildImageAPI mBuildImageAPI;
 
     public interface BuildImageListCallback {
-        public void updateList(List<BuildImage> imageList);
+        public void updateList(List<BuildImageFile> imageList);
+        public void updateList(Single<List<BuildImageFile>> imageList);
     }
 
     @Inject
     public BuildImageProvider(Context context) {
         this.mContext = context;
-    }
-
-    public void filterForDevice(final List<BuildImage> imageList, final String device, final BuildImageListCallback callback) {
-
-        Observable<BuildImage> listObservable = Observable.fromIterable(imageList).filter(
-                new Predicate<BuildImage>() {
-                    @Override
-                    public boolean test(BuildImage buildImage) throws Exception {
-                        return buildImage.getFilename().contains(device);
-                    }
-                });
-        listObservable.subscribe(new Observer<BuildImage>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(BuildImage buildImage) {
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onComplete() {
-                callback.updateList(imageList);
-            }
-        });
     }
 
     private Moshi provideMoshi() {
@@ -99,6 +67,7 @@ public class BuildImageProvider {
                     .baseUrl(BASE_URL)
                     .client(httpClient.build())
                     .addConverterFactory(MoshiConverterFactory.create(provideMoshi()))
+                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                     .build();
 
             mBuildImageAPI = retrofit.create(BuildImageAPI.class);
@@ -108,40 +77,42 @@ public class BuildImageProvider {
 
     public void getImageList(final String filter, final BuildImageListCallback callback) {
         new Thread(new Runnable() {
+            @Override
             public void run() {
-                List<BuildImage> imageList = new ArrayList<>();
+                List<BuildImageFile> imageList = new ArrayList<>();
                 PatternMatcher matcher = new PatternMatcher(filter, PatternMatcher.PATTERN_SIMPLE_GLOB);
 
                 Call<List<BuildImageList>> call = getBuildImageAPI().getBuildImageList();
-                call.enqueue(new Callback<List<BuildImageList>>() {
-                    @Override
-                    public void onResponse(Call<List<BuildImageList>> call, Response<List<BuildImageList>> response) {
-                        if (response.isSuccessful()) {
-                            List<BuildImageList> buildImageList = response.body();
-                            for (BuildImageList device : buildImageList) {
-                                for (BuildImageFile file : device.files()) {
-                                    String fileName = new File(file.filename()).getName();
-                                    if (matcher.match(fileName)) {
-                                        long timestamp = file.timestamp();
-                                        BuildImage image = new BuildImage(fileName, timestamp);
-                                        imageList.add(image);
-                                    }
-                                }
-                            }
-                            callback.updateList(imageList);
-                        } else {
-                            Log.d("maxwen", "" + response.body());
-                        }
+                try {
+                    List<BuildImageList> buildImageList = call.execute().body();
+                    if (buildImageList != null) {
+                        imageList = buildImageList.stream()
+                                .flatMap(device -> device.files().stream())
+                                .filter(file -> matcher.match(new File(file.filename()).getName()))
+                                .collect(Collectors.toList());
                     }
-
-                    @Override
-                    public void onFailure(Call<List<BuildImageList>> call, Throwable t) {
-                        Log.d("maxwen", "", t);
-                    }
-                });
+                    callback.updateList(imageList);
+                } catch (IOException e) {
+                    Log.d("maxwen", "", e);
+                }
             }
+        }).start();
+    }
 
+    public void getImageList2(final String filter, final BuildImageListCallback callback) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                PatternMatcher matcher = new PatternMatcher(filter, PatternMatcher.PATTERN_SIMPLE_GLOB);
 
+                Single<List<BuildImageFile>> imageList = getBuildImageAPI().getBuildImageList2()
+                        .flatMapIterable(x -> x)
+                        .flatMap(device -> Observable.fromIterable(device.files()))
+                        .filter(file -> matcher.match(new File(file.filename()).getName()))
+                        .toList();
+
+                callback.updateList(imageList);
+            }
         }).start();
     }
 }

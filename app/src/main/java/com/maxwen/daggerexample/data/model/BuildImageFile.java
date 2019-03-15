@@ -6,7 +6,7 @@ import com.squareup.moshi.Moshi;
 
 @AutoValue
 public abstract class BuildImageFile {
-    public abstract long timestamp();
+    public abstract Long timestamp();
 
     public abstract String filename();
 

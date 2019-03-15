@@ -16,18 +16,20 @@ import android.widget.TextView;
 
 import com.maxwen.daggerexample.R;
 import com.maxwen.daggerexample.data.BuildImageProvider;
-import com.maxwen.daggerexample.data.model.BuildImage;
+import com.maxwen.daggerexample.data.model.BuildImageFile;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.reactivex.Single;
 
 public class BuildImageView extends LinearLayout implements BuildImageProvider.BuildImageListCallback {
 
     private RecyclerView mListView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
-    private List<BuildImage> mBuildImageList = new ArrayList<>();
+    private List<BuildImageFile> mBuildImageList = new ArrayList<>();
     private static final SimpleDateFormat formatter
             = new SimpleDateFormat("yyyy.MM.dd");
     private Button mUpdateList;
@@ -45,9 +47,9 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
             mTimestamp = v.findViewById(R.id.timestamp);
         }
 
-        public void setData(BuildImage buildImage) {
-            mFileName.setText(buildImage.getFilename());
-            mTimestamp.setText(formatter.format(buildImage.getTimestamp()));
+        public void setData(BuildImageFile buildImage) {
+            mFileName.setText(buildImage.filename());
+            mTimestamp.setText(formatter.format(buildImage.timestamp()));
         }
     }
 
@@ -92,13 +94,13 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
         mUpdateList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mController.getBuildImageProvider().getImageList(".*\\.zip", BuildImageView.this);
+                mController.getBuildImageProvider().getImageList2(".*\\.zip", BuildImageView.this);
             }
         });
     }
 
     @Override
-    public void updateList(List<BuildImage> imageList) {
+    public void updateList(List<BuildImageFile> imageList) {
         mBuildImageList.clear();
         mBuildImageList.addAll(imageList);
         mListView.post(new Runnable() {
@@ -108,4 +110,17 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
             }
         });
     }
+
+    @Override
+    public void updateList(Single<List<BuildImageFile>> imageList) {
+        mBuildImageList.clear();
+        imageList.subscribe(files -> mBuildImageList.addAll(files));
+        mListView.post(new Runnable() {
+            @Override
+            public void run() {
+                mAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+
 }
