@@ -56,7 +56,8 @@ public class OwmView extends LinearLayout implements WeatherProvider.WeatherProv
                 weather.getCoord().getLon() + "\n" +
                 weather.getWeather().get(0).getMain() + "\n" +
                 weather.getWeather().get(0).getDescription() + "\n" +
-                weather.getWeather().get(0).getIcon());
+                weather.getWeather().get(0).getIcon() + "\n" +
+                weather.getMain().getTemp());
         setWeatherIcon(weather.getWeather().get(0).getIcon(), mWeatherIcon);
     }
 

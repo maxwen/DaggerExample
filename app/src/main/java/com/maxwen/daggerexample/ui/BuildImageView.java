@@ -9,6 +9,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -29,6 +30,7 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
     private List<BuildImage> mBuildImageList = new ArrayList<>();
     private static final SimpleDateFormat formatter
             = new SimpleDateFormat("yyyy.MM.dd");
+    private Button mUpdateList;
 
     private BuildImageController mController;
 
@@ -85,6 +87,14 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
         mListView.setLayoutManager(layoutManager);
         mAdapter = new BuildImageAdapter();
         mListView.setAdapter(mAdapter);
+
+        mUpdateList = findViewById(R.id.list_update);
+        mUpdateList.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mController.getBuildImageProvider().getImageList(".*\\.zip", BuildImageView.this);
+            }
+        });
     }
 
     @Override

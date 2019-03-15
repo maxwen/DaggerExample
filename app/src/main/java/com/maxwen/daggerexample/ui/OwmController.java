@@ -1,6 +1,8 @@
 package com.maxwen.daggerexample.ui;
 
+import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,5 +27,16 @@ public class OwmController extends BaseController {
     public WeatherProvider getWeatherProvider() {
         MainActivity activity = (MainActivity) getActivity();
         return activity.getApplicationComponent().getWeatherProvider();
+    }
+
+    @Override
+    protected void onRestoreViewState(@androidx.annotation.NonNull View view, @androidx.annotation.NonNull Bundle savedViewState) {
+        Log.d("maxwen", "onRestoreViewState");
+    }
+
+
+    @Override
+    protected void onSaveInstanceState(@androidx.annotation.NonNull Bundle outState) {
+        Log.d("maxwen", "onSaveInstanceState");
     }
 }

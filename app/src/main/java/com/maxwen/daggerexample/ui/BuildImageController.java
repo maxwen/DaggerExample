@@ -15,7 +15,6 @@ public class BuildImageController extends BaseController {
     protected View onCreateView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container) {
         BuildImageView view = (BuildImageView) inflater.inflate(R.layout.build_image_view, container, false);
         view.setController(this);
-        getBuildImageProvider().getImageList(".*\\.zip", view);
         return view;
     }
 
