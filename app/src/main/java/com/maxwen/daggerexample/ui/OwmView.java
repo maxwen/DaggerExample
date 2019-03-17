@@ -6,7 +6,8 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.maxwen.daggerexample.R;
@@ -15,7 +16,7 @@ import com.maxwen.daggerexample.data.model.CurrentWeather;
 import com.maxwen.daggerexample.data.model.ForecastWeather;
 import com.maxwen.daggerexample.data.model.Weather;
 
-public class OwmView extends LinearLayout implements WeatherProvider.WeatherProviderCallback {
+public class OwmView extends FrameLayout implements WeatherProvider.WeatherProviderCallback {
 
     private static final String PATH_TO_WEATHER_FONT = "fonts/weathericons-regular-webfont.ttf";
 
@@ -24,6 +25,7 @@ public class OwmView extends LinearLayout implements WeatherProvider.WeatherProv
     private TextView mWeatherIcon;
     private Typeface mWeatherFont;
     private OwmController mController;
+    private ProgressBar mProgress;
 
     public OwmView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -37,10 +39,12 @@ public class OwmView extends LinearLayout implements WeatherProvider.WeatherProv
     protected void onFinishInflate() {
         super.onFinishInflate();
         mWeatherData = findViewById(R.id.weather_text);
+        mProgress = findViewById(R.id.weather_progress);
         mWeatherUpdate = findViewById(R.id.weather_update);
         mWeatherUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mProgress.setVisibility(VISIBLE);
                 mController.getWeatherProvider().getCurrentWeather(OwmView.this);
             }
         });
@@ -51,6 +55,7 @@ public class OwmView extends LinearLayout implements WeatherProvider.WeatherProv
 
     @Override
     public void updateCurrentWeather(CurrentWeather weather) {
+        mProgress.setVisibility(GONE);
         mWeatherData.setText("" + weather.getName() + "\n" +
                 weather.getCoord().getLat() + " - " +
                 weather.getCoord().getLon() + "\n" +
@@ -133,6 +138,7 @@ public class OwmView extends LinearLayout implements WeatherProvider.WeatherProv
 
     @Override
     public void updateForecastWeather(ForecastWeather weather) {
+        mProgress.setVisibility(GONE);
         int i = 1;
         for (com.maxwen.daggerexample.data.model.List l : weather.getList()) {
             for (Weather dayWeather : l.getWeather()) {

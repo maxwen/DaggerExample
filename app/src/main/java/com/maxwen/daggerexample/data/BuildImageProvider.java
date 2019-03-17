@@ -20,6 +20,7 @@ import javax.inject.Singleton;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.functions.Consumer;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
@@ -112,6 +113,23 @@ public class BuildImageProvider {
                         .toList();
 
                 callback.updateList(imageList);
+            }
+        }).start();
+    }
+
+    public void getImageList3(final String filter, Consumer<List<BuildImageFile>> onLoadDone, Consumer<Throwable> onError) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                PatternMatcher matcher = new PatternMatcher(filter, PatternMatcher.PATTERN_SIMPLE_GLOB);
+
+                getBuildImageAPI().getBuildImageList2()
+                        .flatMapIterable(x -> x)
+                        .flatMap(device -> Observable.fromIterable(device.files()))
+                        .filter(file -> matcher.match(new File(file.filename()).getName()))
+                        .toList()
+                        .subscribe(onLoadDone, onError);
+
             }
         }).start();
     }

@@ -6,14 +6,17 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.maxwen.daggerexample.R;
 import com.maxwen.daggerexample.data.BuildImageProvider;
 import com.maxwen.daggerexample.data.model.BuildImageFile;
@@ -23,8 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 
-public class BuildImageView extends LinearLayout implements BuildImageProvider.BuildImageListCallback {
+public class BuildImageView extends FrameLayout implements BuildImageProvider.BuildImageListCallback {
 
     private RecyclerView mListView;
     private RecyclerView.Adapter mAdapter;
@@ -33,8 +37,11 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
     private static final SimpleDateFormat formatter
             = new SimpleDateFormat("yyyy.MM.dd");
     private Button mUpdateList;
+    private ProgressBar mProgress;
 
     private BuildImageController mController;
+    private final BehaviorRelay<List<BuildImageFile>> mBuildImageRelay = BehaviorRelay.create();
+    private final BehaviorRelay<Throwable> mErrorRelay = BehaviorRelay.create();
 
     private class BuildImageViewHolder extends RecyclerView.ViewHolder {
         TextView mFileName;
@@ -89,14 +96,25 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
         mListView.setLayoutManager(layoutManager);
         mAdapter = new BuildImageAdapter();
         mListView.setAdapter(mAdapter);
+        mProgress = findViewById(R.id.list_progress);
 
         mUpdateList = findViewById(R.id.list_update);
         mUpdateList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mController.getBuildImageProvider().getImageList2(".*\\.zip", BuildImageView.this);
+                mProgress.setVisibility(VISIBLE);
+                mController.getBuildImageProvider().getImageList3(".*\\.zip", mBuildImageRelay, mErrorRelay);
             }
         });
+        mBuildImageRelay.observeOn(AndroidSchedulers.mainThread())
+                .subscribe(buildImageList -> {
+                    mBuildImageList.clear();
+                    mBuildImageList.addAll(buildImageList);
+                    mProgress.setVisibility(GONE);
+                    mAdapter.notifyDataSetChanged();
+                });
+        mErrorRelay.observeOn(AndroidSchedulers.mainThread())
+                .subscribe(e -> Log.e("maxwen", "", e));
     }
 
     @Override
@@ -118,9 +136,9 @@ public class BuildImageView extends LinearLayout implements BuildImageProvider.B
         mListView.post(new Runnable() {
             @Override
             public void run() {
+                mProgress.setVisibility(GONE);
                 mAdapter.notifyDataSetChanged();
             }
         });
     }
-
 }
