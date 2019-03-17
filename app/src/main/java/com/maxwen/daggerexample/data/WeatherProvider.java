@@ -15,12 +15,12 @@ import com.maxwen.daggerexample.data.model.ForecastWeather;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 @Singleton
@@ -40,12 +40,6 @@ public class WeatherProvider {
         sLocationCriteria.setPowerRequirement(Criteria.POWER_LOW);
         sLocationCriteria.setAccuracy(Criteria.ACCURACY_COARSE);
         sLocationCriteria.setCostAllowed(false);
-    }
-
-    public interface WeatherProviderCallback {
-        public void updateCurrentWeather(CurrentWeather weather);
-
-        public void updateForecastWeather(ForecastWeather weather);
     }
 
     public interface LocationCallback {
@@ -73,6 +67,7 @@ public class WeatherProvider {
                     .baseUrl(BASE_URL)
                     .client(httpClient.build())
                     .addConverterFactory(GsonConverterFactory.create())
+                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                     .build();
 
             mWeatherAPI = retrofit.create(WeatherAPI.class);
@@ -125,7 +120,7 @@ public class WeatherProvider {
         }
     }
 
-    public void getCurrentWeather(WeatherProviderCallback callback) {
+    /*public void getCurrentWeather(WeatherProviderCallback callback) {
         getCurrentLocation(new LocationCallback() {
             @Override
             public void onLocationAvailable(Location location) {
@@ -168,5 +163,31 @@ public class WeatherProvider {
                 });
             }
         });
+    }*/
+
+    public void getCurrentWeather2(Consumer<CurrentWeather> onLoadDone, Consumer<Throwable> onError) {
+        getCurrentLocation(new LocationCallback() {
+            @Override
+            public void onLocationAvailable(Location location) {
+                String lat = String.valueOf(location.getLatitude());
+                String lon = String.valueOf(location.getLongitude());
+                getWeatherAPI().getCurrentWeatherOfLocation2(lat, lon, "f839981a9e6195410e563ef35d1e7fb4", "metric")
+                        .subscribeOn(Schedulers.io())
+                        .subscribe(onLoadDone, onError);
+            }
+        });
     }
+    public void getForecastWeather2(Consumer<ForecastWeather> onLoadDone, Consumer<Throwable> onError) {
+        getCurrentLocation(new LocationCallback() {
+            @Override
+            public void onLocationAvailable(Location location) {
+                String lat = String.valueOf(location.getLatitude());
+                String lon = String.valueOf(location.getLongitude());
+                getWeatherAPI().getForecastWeatherOfLocation2(lat, lon, "f839981a9e6195410e563ef35d1e7fb4", "metric", 5)
+                        .subscribeOn(Schedulers.io())
+                        .subscribe(onLoadDone, onError);
+            }
+        });
+    }
+
 }

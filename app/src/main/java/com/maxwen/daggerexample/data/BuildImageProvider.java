@@ -6,24 +6,19 @@ import android.util.Log;
 
 import com.maxwen.daggerexample.data.model.AdapterFactory;
 import com.maxwen.daggerexample.data.model.BuildImageFile;
-import com.maxwen.daggerexample.data.model.BuildImageList;
 import com.squareup.moshi.Moshi;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import io.reactivex.Observable;
-import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.moshi.MoshiConverterFactory;
@@ -35,11 +30,6 @@ public class BuildImageProvider {
 
     private Context mContext;
     private BuildImageAPI mBuildImageAPI;
-
-    public interface BuildImageListCallback {
-        public void updateList(List<BuildImageFile> imageList);
-        public void updateList(Single<List<BuildImageFile>> imageList);
-    }
 
     @Inject
     public BuildImageProvider(Context context) {
@@ -76,7 +66,7 @@ public class BuildImageProvider {
         return mBuildImageAPI;
     }
 
-    public void getImageList(final String filter, final BuildImageListCallback callback) {
+    /*public void getImageList(final String filter, final BuildImageListCallback callback) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -115,22 +105,16 @@ public class BuildImageProvider {
                 callback.updateList(imageList);
             }
         }).start();
-    }
+    }*/
 
-    public void getImageList3(final String filter, Consumer<List<BuildImageFile>> onLoadDone, Consumer<Throwable> onError) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                PatternMatcher matcher = new PatternMatcher(filter, PatternMatcher.PATTERN_SIMPLE_GLOB);
-
-                getBuildImageAPI().getBuildImageList2()
-                        .flatMapIterable(x -> x)
-                        .flatMap(device -> Observable.fromIterable(device.files()))
-                        .filter(file -> matcher.match(new File(file.filename()).getName()))
-                        .toList()
-                        .subscribe(onLoadDone, onError);
-
-            }
-        }).start();
+    public void getImageList(final String filter, Consumer<List<BuildImageFile>> onLoadDone, Consumer<Throwable> onError) {
+        PatternMatcher matcher = new PatternMatcher(filter, PatternMatcher.PATTERN_SIMPLE_GLOB);
+        getBuildImageAPI().getBuildImageList2()
+                .subscribeOn(Schedulers.io())
+                .flatMapIterable(x -> x)
+                .flatMap(device -> Observable.fromIterable(device.files()))
+                .filter(file -> matcher.match(new File(file.filename()).getName()))
+                .toList()
+                .subscribe(onLoadDone, onError);
     }
 }

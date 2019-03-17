@@ -6,7 +6,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,19 +15,14 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.maxwen.daggerexample.R;
-import com.maxwen.daggerexample.data.BuildImageProvider;
 import com.maxwen.daggerexample.data.model.BuildImageFile;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-
-public class BuildImageView extends FrameLayout implements BuildImageProvider.BuildImageListCallback {
+public class BuildImageView extends FrameLayout {
 
     private RecyclerView mListView;
     private RecyclerView.Adapter mAdapter;
@@ -40,8 +34,6 @@ public class BuildImageView extends FrameLayout implements BuildImageProvider.Bu
     private ProgressBar mProgress;
 
     private BuildImageController mController;
-    private final BehaviorRelay<List<BuildImageFile>> mBuildImageRelay = BehaviorRelay.create();
-    private final BehaviorRelay<Throwable> mErrorRelay = BehaviorRelay.create();
 
     private class BuildImageViewHolder extends RecyclerView.ViewHolder {
         TextView mFileName;
@@ -102,43 +94,18 @@ public class BuildImageView extends FrameLayout implements BuildImageProvider.Bu
         mUpdateList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mProgress.setVisibility(VISIBLE);
-                mController.getBuildImageProvider().getImageList3(".*\\.zip", mBuildImageRelay, mErrorRelay);
+                mController.updateList();
             }
         });
-        mBuildImageRelay.observeOn(AndroidSchedulers.mainThread())
-                .subscribe(buildImageList -> {
-                    mBuildImageList.clear();
-                    mBuildImageList.addAll(buildImageList);
-                    mProgress.setVisibility(GONE);
-                    mAdapter.notifyDataSetChanged();
-                });
-        mErrorRelay.observeOn(AndroidSchedulers.mainThread())
-                .subscribe(e -> Log.e("maxwen", "", e));
     }
 
-    @Override
-    public void updateList(List<BuildImageFile> imageList) {
+    public void setData(List<BuildImageFile> imageList) {
         mBuildImageList.clear();
         mBuildImageList.addAll(imageList);
-        mListView.post(new Runnable() {
-            @Override
-            public void run() {
-                mAdapter.notifyDataSetChanged();
-            }
-        });
+        mAdapter.notifyDataSetChanged();
     }
 
-    @Override
-    public void updateList(Single<List<BuildImageFile>> imageList) {
-        mBuildImageList.clear();
-        imageList.subscribe(files -> mBuildImageList.addAll(files));
-        mListView.post(new Runnable() {
-            @Override
-            public void run() {
-                mProgress.setVisibility(GONE);
-                mAdapter.notifyDataSetChanged();
-            }
-        });
+    public void setLoading(boolean loading) {
+        mProgress.setVisibility(loading ? VISIBLE : GONE);
     }
 }

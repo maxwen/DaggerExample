@@ -11,12 +11,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.maxwen.daggerexample.R;
-import com.maxwen.daggerexample.data.WeatherProvider;
 import com.maxwen.daggerexample.data.model.CurrentWeather;
 import com.maxwen.daggerexample.data.model.ForecastWeather;
 import com.maxwen.daggerexample.data.model.Weather;
 
-public class OwmView extends FrameLayout implements WeatherProvider.WeatherProviderCallback {
+public class OwmView extends FrameLayout {
 
     private static final String PATH_TO_WEATHER_FONT = "fonts/weathericons-regular-webfont.ttf";
 
@@ -44,8 +43,7 @@ public class OwmView extends FrameLayout implements WeatherProvider.WeatherProvi
         mWeatherUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mProgress.setVisibility(VISIBLE);
-                mController.getWeatherProvider().getCurrentWeather(OwmView.this);
+                mController.updateWeather();
             }
         });
         mWeatherIcon = findViewById(R.id.weather_icon);
@@ -53,9 +51,7 @@ public class OwmView extends FrameLayout implements WeatherProvider.WeatherProvi
         mWeatherIcon.setTypeface(mWeatherFont);
     }
 
-    @Override
     public void updateCurrentWeather(CurrentWeather weather) {
-        mProgress.setVisibility(GONE);
         mWeatherData.setText("" + weather.getName() + "\n" +
                 weather.getCoord().getLat() + " - " +
                 weather.getCoord().getLon() + "\n" +
@@ -136,9 +132,7 @@ public class OwmView extends FrameLayout implements WeatherProvider.WeatherProvi
         }
     }
 
-    @Override
     public void updateForecastWeather(ForecastWeather weather) {
-        mProgress.setVisibility(GONE);
         int i = 1;
         for (com.maxwen.daggerexample.data.model.List l : weather.getList()) {
             for (Weather dayWeather : l.getWeather()) {
@@ -151,5 +145,9 @@ public class OwmView extends FrameLayout implements WeatherProvider.WeatherProvi
             }
             i++;
         }
+    }
+
+    public void setLoading(boolean loading) {
+        mProgress.setVisibility(loading ? VISIBLE : GONE);
     }
 }

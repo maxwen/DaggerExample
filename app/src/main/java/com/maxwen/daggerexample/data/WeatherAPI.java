@@ -7,6 +7,7 @@ package com.maxwen.daggerexample.data;
 import com.maxwen.daggerexample.data.model.CurrentWeather;
 import com.maxwen.daggerexample.data.model.ForecastWeather;
 
+import io.reactivex.Observable;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
@@ -21,6 +22,19 @@ public interface WeatherAPI {
 
     @GET("data/2.5//forecast")
     Call<ForecastWeather> getForecastWeatherOfLocation(@Query("lat") String lat,
+                                                       @Query("lon") String lon,
+                                                       @Query("appId") String appid,
+                                                       @Query("units") String units,
+                                                       @Query("cnt") Integer days);
+
+    @GET("data/2.5//weather")
+    Observable<CurrentWeather> getCurrentWeatherOfLocation2(@Query("lat") String lat,
+                                                            @Query("lon") String lon,
+                                                            @Query("appId") String appid,
+                                                            @Query("units") String units);
+
+    @GET("data/2.5//forecast")
+    Observable<ForecastWeather> getForecastWeatherOfLocation2(@Query("lat") String lat,
                                                        @Query("lon") String lon,
                                                        @Query("appId") String appid,
                                                        @Query("units") String units,
