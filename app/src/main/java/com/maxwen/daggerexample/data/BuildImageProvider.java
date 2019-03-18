@@ -2,11 +2,8 @@ package com.maxwen.daggerexample.data;
 
 import android.content.Context;
 import android.os.PatternMatcher;
-import android.util.Log;
 
-import com.maxwen.daggerexample.data.model.AdapterFactory;
 import com.maxwen.daggerexample.data.model.BuildImageFile;
-import com.squareup.moshi.Moshi;
 
 import java.io.File;
 import java.util.List;
@@ -17,11 +14,7 @@ import javax.inject.Singleton;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.moshi.MoshiConverterFactory;
 
 @Singleton
 public class BuildImageProvider {
@@ -32,38 +25,11 @@ public class BuildImageProvider {
     private BuildImageAPI mBuildImageAPI;
 
     @Inject
-    public BuildImageProvider(Context context) {
-        this.mContext = context;
-    }
-
-    private Moshi provideMoshi() {
-        return new Moshi.Builder()
-                .add(AdapterFactory.create())
-                .build();
-    }
-
-    private BuildImageAPI getBuildImageAPI() {
-        if (mBuildImageAPI == null) {
-            HttpLoggingInterceptor logging = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
-                @Override
-                public void log(String message) {
-                    Log.d("maxwen", message);
-                }
-            });
-            logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-
-            OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-            httpClient.addInterceptor(logging);
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl(BASE_URL)
-                    .client(httpClient.build())
-                    .addConverterFactory(MoshiConverterFactory.create(provideMoshi()))
-                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                    .build();
-
-            mBuildImageAPI = retrofit.create(BuildImageAPI.class);
-        }
-        return mBuildImageAPI;
+    public BuildImageProvider(Context context, Retrofit.Builder builder) {
+        mContext = context;
+        builder.baseUrl(BASE_URL);
+        Retrofit r = builder.build();
+        mBuildImageAPI = r.create(BuildImageAPI.class);
     }
 
     /*public void getImageList(final String filter, final BuildImageListCallback callback) {
@@ -109,7 +75,7 @@ public class BuildImageProvider {
 
     public void getImageList(final String filter, Consumer<List<BuildImageFile>> onLoadDone, Consumer<Throwable> onError) {
         PatternMatcher matcher = new PatternMatcher(filter, PatternMatcher.PATTERN_SIMPLE_GLOB);
-        getBuildImageAPI().getBuildImageList2()
+        mBuildImageAPI.getBuildImageList2()
                 .subscribeOn(Schedulers.io())
                 .flatMapIterable(x -> x)
                 .flatMap(device -> Observable.fromIterable(device.files()))

@@ -1,21 +1,16 @@
 
 package com.maxwen.daggerexample.data.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.google.auto.value.AutoValue;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
 
-public class Clouds {
+@AutoValue
+public abstract class Clouds {
 
-    @SerializedName("all")
-    @Expose
-    private Integer all;
+    public abstract Integer all();
 
-    public Integer getAll() {
-        return all;
+    public static JsonAdapter<Clouds> jsonAdapter(Moshi moshi) {
+        return new AutoValue_Clouds.MoshiJsonAdapter(moshi);
     }
-
-    public void setAll(Integer all) {
-        this.all = all;
-    }
-
 }

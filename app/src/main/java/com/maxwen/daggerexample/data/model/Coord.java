@@ -1,32 +1,18 @@
 
 package com.maxwen.daggerexample.data.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.google.auto.value.AutoValue;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
 
-public class Coord {
+@AutoValue
+public abstract class Coord {
 
-    @SerializedName("lon")
-    @Expose
-    private Double lon;
-    @SerializedName("lat")
-    @Expose
-    private Double lat;
+    public abstract Double lon();
 
-    public Double getLon() {
-        return lon;
+    public abstract Double lat();
+
+    public static JsonAdapter<Coord> jsonAdapter(Moshi moshi) {
+        return new AutoValue_Coord.MoshiJsonAdapter(moshi);
     }
-
-    public void setLon(Double lon) {
-        this.lon = lon;
-    }
-
-    public Double getLat() {
-        return lat;
-    }
-
-    public void setLat(Double lat) {
-        this.lat = lat;
-    }
-
 }

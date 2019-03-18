@@ -17,7 +17,7 @@ import com.maxwen.daggerexample.R;
 import com.maxwen.daggerexample.di.App;
 import com.maxwen.daggerexample.di.ApplicationComponent;
 
-public class MainActivity extends AppCompatActivity  {
+public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_REQUEST_LOCATION = 0;
 
@@ -69,9 +69,12 @@ public class MainActivity extends AppCompatActivity  {
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION},
                     PERMISSIONS_REQUEST_LOCATION);
         }
     }

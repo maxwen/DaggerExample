@@ -1,32 +1,21 @@
 
 package com.maxwen.daggerexample.data.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.google.auto.value.AutoValue;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
 
-public class Wind {
+import javax.annotation.Nullable;
 
-    @SerializedName("speed")
-    @Expose
-    private Double speed;
-    @SerializedName("deg")
-    @Expose
-    private Integer deg;
+@AutoValue
+public abstract class Wind {
 
-    public Double getSpeed() {
-        return speed;
+    public abstract Double speed();
+
+    @Nullable
+    public abstract Integer deg();
+
+    public static JsonAdapter<Wind> jsonAdapter(Moshi moshi) {
+        return new AutoValue_Wind.MoshiJsonAdapter(moshi);
     }
-
-    public void setSpeed(Double speed) {
-        this.speed = speed;
-    }
-
-    public Integer getDeg() {
-        return deg;
-    }
-
-    public void setDeg(Integer deg) {
-        this.deg = deg;
-    }
-
 }

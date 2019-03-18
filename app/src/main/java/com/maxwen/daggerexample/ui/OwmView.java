@@ -52,14 +52,14 @@ public class OwmView extends FrameLayout {
     }
 
     public void updateCurrentWeather(CurrentWeather weather) {
-        mWeatherData.setText("" + weather.getName() + "\n" +
-                weather.getCoord().getLat() + " - " +
-                weather.getCoord().getLon() + "\n" +
-                weather.getWeather().get(0).getMain() + "\n" +
-                weather.getWeather().get(0).getDescription() + "\n" +
-                weather.getWeather().get(0).getIcon() + "\n" +
-                weather.getMain().getTemp());
-        setWeatherIcon(weather.getWeather().get(0).getIcon(), mWeatherIcon);
+        mWeatherData.setText("" + weather.name() + "\n" +
+                weather.coord().lat() + " - " +
+                weather.coord().lon() + "\n" +
+                weather.weather().get(0).main() + "\n" +
+                weather.weather().get(0).description() + "\n" +
+                weather.weather().get(0).icon() + "\n" +
+                weather.main().temp());
+        setWeatherIcon(weather.weather().get(0).icon(), mWeatherIcon);
     }
 
     private int getWeatherIconForDay(int day) {
@@ -134,14 +134,14 @@ public class OwmView extends FrameLayout {
 
     public void updateForecastWeather(ForecastWeather weather) {
         int i = 1;
-        for (com.maxwen.daggerexample.data.model.List l : weather.getList()) {
-            for (Weather dayWeather : l.getWeather()) {
+        for (com.maxwen.daggerexample.data.model.List l : weather.list()) {
+            for (Weather dayWeather : l.weather()) {
                 TextView t = findViewById(getWeatherIconForDay(i));
                 if (t == null) {
                     continue;
                 }
                 t.setTypeface(mWeatherFont);
-                setWeatherIcon(dayWeather.getIcon(), t);
+                setWeatherIcon(dayWeather.icon(), t);
             }
             i++;
         }

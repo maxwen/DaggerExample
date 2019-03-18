@@ -1,65 +1,28 @@
 
 package com.maxwen.daggerexample.data.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.google.auto.value.AutoValue;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
 
-public class Main {
+import javax.annotation.Nullable;
 
-    @SerializedName("temp")
-    @Expose
-    private Double temp;
-    @SerializedName("pressure")
-    @Expose
-    private Integer pressure;
-    @SerializedName("humidity")
-    @Expose
-    private Integer humidity;
-    @SerializedName("temp_min")
-    @Expose
-    private Double tempMin;
-    @SerializedName("temp_max")
-    @Expose
-    private Double tempMax;
+@AutoValue
+public abstract class Main {
 
-    public Double getTemp() {
-        return temp;
+    public abstract Double temp();
+
+    public abstract Integer pressure();
+
+    public abstract Integer humidity();
+
+    @Nullable
+    public abstract Double tempMin();
+
+    @Nullable
+    public abstract Double tempMax();
+
+    public static JsonAdapter<Main> jsonAdapter(Moshi moshi) {
+        return new AutoValue_Main.MoshiJsonAdapter(moshi);
     }
-
-    public void setTemp(Double temp) {
-        this.temp = temp;
-    }
-
-    public Integer getPressure() {
-        return pressure;
-    }
-
-    public void setPressure(Integer pressure) {
-        this.pressure = pressure;
-    }
-
-    public Integer getHumidity() {
-        return humidity;
-    }
-
-    public void setHumidity(Integer humidity) {
-        this.humidity = humidity;
-    }
-
-    public Double getTempMin() {
-        return tempMin;
-    }
-
-    public void setTempMin(Double tempMin) {
-        this.tempMin = tempMin;
-    }
-
-    public Double getTempMax() {
-        return tempMax;
-    }
-
-    public void setTempMax(Double tempMax) {
-        this.tempMax = tempMax;
-    }
-
 }

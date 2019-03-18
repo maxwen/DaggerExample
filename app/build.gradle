@@ -52,4 +52,5 @@ dependencies {
     compileOnly 'com.ryanharter.auto.value:auto-value-moshi-annotations:0.4.3'
     annotationProcessor "com.ryanharter.auto.value:auto-value-moshi:0.4.3"
     implementation 'com.jakewharton.rxrelay2:rxrelay:2.1.0'
+    implementation 'com.google.android.gms:play-services:12.0.1'
 }

@@ -1,98 +1,37 @@
 
 package com.maxwen.daggerexample.data.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.google.auto.value.AutoValue;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
 
-public class List {
+import javax.annotation.Nullable;
 
-    @SerializedName("dt")
-    @Expose
-    private Integer dt;
-    @SerializedName("temp")
-    @Expose
-    private Temp temp;
-    @SerializedName("pressure")
-    @Expose
-    private Double pressure;
-    @SerializedName("humidity")
-    @Expose
-    private Integer humidity;
-    @SerializedName("weather")
-    @Expose
-    private java.util.List<Weather> weather = null;
-    @SerializedName("speed")
-    @Expose
-    private Double speed;
-    @SerializedName("deg")
-    @Expose
-    private Integer deg;
-    @SerializedName("clouds")
-    @Expose
-    private Clouds clouds;
+@AutoValue
+public abstract class List {
 
-    public Integer getDt() {
-        return dt;
+    public abstract Integer dt();
+
+    @Nullable
+    public abstract Temp temp();
+
+    @Nullable
+    public abstract Double pressure();
+
+    @Nullable
+    public abstract Integer humidity();
+
+    public abstract java.util.List<Weather> weather();
+
+    @Nullable
+    public abstract Double speed();
+
+    @Nullable
+    public abstract Integer deg();
+
+    public abstract Clouds clouds();
+
+    public static JsonAdapter<List> jsonAdapter(Moshi moshi) {
+        return new AutoValue_List.MoshiJsonAdapter(moshi);
     }
-
-    public void setDt(Integer dt) {
-        this.dt = dt;
-    }
-
-    public Temp getTemp() {
-        return temp;
-    }
-
-    public void setTemp(Temp temp) {
-        this.temp = temp;
-    }
-
-    public Double getPressure() {
-        return pressure;
-    }
-
-    public void setPressure(Double pressure) {
-        this.pressure = pressure;
-    }
-
-    public Integer getHumidity() {
-        return humidity;
-    }
-
-    public void setHumidity(Integer humidity) {
-        this.humidity = humidity;
-    }
-
-    public java.util.List<Weather> getWeather() {
-        return weather;
-    }
-
-    public void setWeather(java.util.List<Weather> weather) {
-        this.weather = weather;
-    }
-
-    public Double getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(Double speed) {
-        this.speed = speed;
-    }
-
-    public Integer getDeg() {
-        return deg;
-    }
-
-    public void setDeg(Integer deg) {
-        this.deg = deg;
-    }
-
-    public Clouds getClouds() {
-        return clouds;
-    }
-
-    public void setClouds(Clouds clouds) {
-        this.clouds = clouds;
-    }
-
 }
