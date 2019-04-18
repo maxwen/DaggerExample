@@ -11,16 +11,15 @@ import com.maxwen.daggerexample.R;
 import com.maxwen.daggerexample.data.BuildImageProvider;
 import com.maxwen.daggerexample.data.model.BuildImageFile;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
 public class BuildImageController extends BaseController {
-    private List<BuildImageFile> mBuildImageList = new ArrayList<>();
     private final BehaviorRelay<List<BuildImageFile>> mBuildImageRelay = BehaviorRelay.create();
     private final BehaviorRelay<Throwable> mErrorRelay = BehaviorRelay.create();
     private final BehaviorRelay<Boolean> mLoadingRelay = BehaviorRelay.create();
+    private boolean mInitDone;
 
     @NonNull
     @Override
@@ -31,9 +30,7 @@ public class BuildImageController extends BaseController {
         mBuildImageRelay.observeOn(AndroidSchedulers.mainThread())
                 .subscribe(buildImageList -> {
                     mLoadingRelay.accept(false);
-                    mBuildImageList.clear();
-                    mBuildImageList.addAll(buildImageList);
-                    view.setData(mBuildImageList);
+                    view.setData(buildImageList);
                 });
         mErrorRelay.observeOn(AndroidSchedulers.mainThread())
                 .subscribe(e -> {
@@ -42,8 +39,9 @@ public class BuildImageController extends BaseController {
                 });
         mLoadingRelay.observeOn(AndroidSchedulers.mainThread())
                 .subscribe(loading -> view.setLoading(loading));
-        if (mBuildImageList.size() == 0) {
+        if (!mInitDone) {
             updateList();
+            mInitDone = true;
         }
         return view;
     }

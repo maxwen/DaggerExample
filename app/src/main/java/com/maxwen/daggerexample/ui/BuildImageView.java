@@ -9,18 +9,23 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.maxwen.daggerexample.R;
 import com.maxwen.daggerexample.data.model.BuildImageFile;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BuildImageView extends FrameLayout {
 
@@ -32,8 +37,13 @@ public class BuildImageView extends FrameLayout {
             = new SimpleDateFormat("yyyy.MM.dd");
     private Button mUpdateList;
     private ProgressBar mProgress;
+    private Spinner mDeviceSpinner;
 
     private BuildImageController mController;
+    private ArrayAdapter<String> mDeviceSpinnerAdapter;
+    private List<String> mDeviceList = new ArrayList<>();
+    private List<BuildImageFile> mFilteredBuildList = new ArrayList<>();
+    private int mSelectedDevice;
 
     private class BuildImageViewHolder extends RecyclerView.ViewHolder {
         TextView mFileName;
@@ -62,12 +72,12 @@ public class BuildImageView extends FrameLayout {
 
         @Override
         public void onBindViewHolder(@NonNull BuildImageViewHolder buildImageViewHolder, int i) {
-            buildImageViewHolder.setData(mBuildImageList.get(i));
+            buildImageViewHolder.setData(mFilteredBuildList.get(i));
         }
 
         @Override
         public int getItemCount() {
-            return mBuildImageList.size();
+            return mFilteredBuildList.size();
         }
     }
 
@@ -89,6 +99,24 @@ public class BuildImageView extends FrameLayout {
         mAdapter = new BuildImageAdapter();
         mListView.setAdapter(mAdapter);
         mProgress = findViewById(R.id.list_progress);
+        mDeviceSpinner = findViewById(R.id.device_select);
+
+        mDeviceSpinnerAdapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_spinner_item, mDeviceList);
+        mDeviceSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_list_item_1);
+        mDeviceSpinner.setAdapter(mDeviceSpinnerAdapter);
+        mDeviceSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mSelectedDevice = position;
+                String device = mDeviceList.get(position);
+                setFilteredData(getFilesOfDevice(device));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
         mUpdateList = findViewById(R.id.list_update);
         mUpdateList.setOnClickListener(new View.OnClickListener() {
@@ -102,10 +130,37 @@ public class BuildImageView extends FrameLayout {
     public void setData(List<BuildImageFile> imageList) {
         mBuildImageList.clear();
         mBuildImageList.addAll(imageList);
+
+        mDeviceList.clear();
+        mDeviceList.addAll(getDirList());
+
+        mDeviceSpinnerAdapter.notifyDataSetChanged();
+        mAdapter.notifyDataSetChanged();
+
+        mFilteredBuildList.clear();
+        mFilteredBuildList.addAll(getFilesOfDevice(mDeviceList.get(mSelectedDevice)));
+    }
+
+    public void setFilteredData(List<BuildImageFile> imageList) {
+        mFilteredBuildList.clear();
+        mFilteredBuildList.addAll(imageList);
         mAdapter.notifyDataSetChanged();
     }
 
     public void setLoading(boolean loading) {
         mProgress.setVisibility(loading ? VISIBLE : GONE);
+    }
+
+    private List<BuildImageFile> getFilesOfDevice(String device) {
+        return mBuildImageList.stream()
+                .filter(file -> new File(file.filename()).getParentFile().getName().equals(device))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getDirList() {
+        return mBuildImageList.stream()
+                .map(file -> new File(file.filename()).getParentFile().getName())
+                .distinct()
+                .collect(Collectors.toList());
     }
 }
