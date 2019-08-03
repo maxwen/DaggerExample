@@ -53,4 +53,6 @@ dependencies {
     annotationProcessor "com.ryanharter.auto.value:auto-value-moshi:0.4.3"
     implementation 'com.jakewharton.rxrelay2:rxrelay:2.1.0'
     implementation 'com.google.android.gms:play-services:12.0.1'
+    implementation 'com.squareup.retrofit2:converter-simplexml:2.6.1'
+    implementation 'com.squareup.picasso:picasso:2.5.2'
 }

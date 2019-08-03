@@ -1,6 +1,8 @@
 package com.maxwen.daggerexample.data;
 
 import android.content.Context;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.support.annotation.NonNull;
 
@@ -13,8 +15,11 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.maxwen.daggerexample.data.model.CurrentWeather;
-import com.maxwen.daggerexample.data.model.ForecastWeather;
+import com.maxwen.daggerexample.data.model.Weatherdata;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -24,80 +29,28 @@ import io.reactivex.schedulers.Schedulers;
 import retrofit2.Retrofit;
 
 @Singleton
-public class WeatherProvider {
-    private static final String BASE_URL = "https://api.openweathermap.org/";
-    //private static final float LOCATION_ACCURACY_THRESHOLD_METERS = 50000;
-    //private static final long OUTDATED_LOCATION_THRESHOLD_MILLIS = 10L * 60L * 1000L; // 10 minutes
+public class NorwayWeatherProvider {
+    private static final String BASE_URL = "https://api.met.no/weatherapi/";
     private static final long TIMEOUT_LOCATION_THRESHOLD_MILLIS = 30L * 1000L; // 30 seconds
 
     private Context mContext;
-    private WeatherAPI mWeatherAPI;
+    private NorwayWeatherAPI mWeatherAPI;
     private FusedLocationProviderClient mFusedLocationClient;
-
-    /*static {
-        final Criteria sLocationCriteria = new Criteria();
-        sLocationCriteria.setPowerRequirement(Criteria.POWER_LOW);
-        sLocationCriteria.setAccuracy(Criteria.ACCURACY_COARSE);
-        sLocationCriteria.setCostAllowed(false);
-    }*/
 
     public interface LocationCallbackCustom {
         public void onLocationAvailable(Location location);
+
         public void onLocationFailed();
     }
 
     @Inject
-    public WeatherProvider(Context context, Retrofit.Builder builder) {
+    public NorwayWeatherProvider(Context context, Retrofit.Builder builder) {
         mContext = context;
         builder.baseUrl(BASE_URL);
         Retrofit r = builder.build();
-        mWeatherAPI = r.create(WeatherAPI.class);
+        mWeatherAPI = r.create(NorwayWeatherAPI.class);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
     }
-
-    /*private void getCurrentLocation(final LocationCallbackCustom callback) throws SecurityException {
-        LocationManager lm = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-        Location location = lm.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
-
-        if (location != null && location.getAccuracy() > LOCATION_ACCURACY_THRESHOLD_METERS) {
-            location = null;
-        }
-        // If lastKnownLocation is not present (because none of the apps in the
-        // device has requested the current location to the system yet) or outdated,
-        // then try to get the current location use the provider that best matches the criteria.
-        boolean needsUpdate = location == null;
-        if (location != null) {
-            long delta = System.currentTimeMillis() - location.getTime();
-            needsUpdate = delta > OUTDATED_LOCATION_THRESHOLD_MILLIS;
-        }
-        if (needsUpdate) {
-            String locationProvider = lm.getBestProvider(sLocationCriteria, true);
-            if (!TextUtils.isEmpty(locationProvider)) {
-                lm.requestSingleUpdate(locationProvider, new LocationListener() {
-                            @Override
-                            public void onLocationChanged(Location location) {
-                                callback.onLocationAvailable(location);
-                            }
-
-                            @Override
-                            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-                            }
-
-                            @Override
-                            public void onProviderEnabled(String provider) {
-                            }
-
-                            @Override
-                            public void onProviderDisabled(String provider) {
-                            }
-                        },
-                        mContext.getMainLooper());
-            }
-        } else {
-            callback.onLocationAvailable(location);
-        }
-    }*/
 
     private void getCurrentLocationGoogle(final LocationCallbackCustom callback) throws SecurityException {
         Task<Location> task = mFusedLocationClient.getLastLocation();
@@ -125,8 +78,9 @@ public class WeatherProvider {
                             }
                             callback.onLocationFailed();
                         }
+
                         @Override
-                        public void onLocationAvailability (LocationAvailability locationAvailability) {
+                        public void onLocationAvailability(LocationAvailability locationAvailability) {
                             if (!locationAvailability.isLocationAvailable()) {
                                 callback.onLocationFailed();
                             }
@@ -143,36 +97,40 @@ public class WeatherProvider {
         });
     }
 
-    public void getCurrentWeather2(Consumer<CurrentWeather> onLoadDone, Consumer<Throwable> onError) {
-        getCurrentLocationGoogle(new LocationCallbackCustom() {
-            @Override
-            public void onLocationAvailable(Location location) {
-                String lat = String.valueOf(location.getLatitude());
-                String lon = String.valueOf(location.getLongitude());
-                mWeatherAPI.getCurrentWeatherOfLocation2(lat, lon, "f839981a9e6195410e563ef35d1e7fb4", "metric")
-                        .subscribeOn(Schedulers.io())
-                        .subscribe(onLoadDone, onError);
-            }
-            @Override
-            public void onLocationFailed() {
-                try {
-                    onError.accept(new RuntimeException());
-                } catch (Exception e) {
-                }
-            }
-        });
+    public static String getCityOfLocation(Context context, Double lat, Double lon) {
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+
+        List<Address> addresses = null;
+
+        try {
+            addresses = geocoder.getFromLocation(
+                    lat,
+                    lon,
+                    1);
+        } catch (IOException ioException) {
+            return "";
+        } catch (IllegalArgumentException illegalArgumentException) {
+            return "";
+        }
+
+        if (addresses != null && addresses.size() != 0) {
+            Address address = addresses.get(0);
+            return address.getAdminArea();
+        }
+        return "";
     }
 
-    public void getForecastWeather2(Consumer<ForecastWeather> onLoadDone, Consumer<Throwable> onError) {
+    public void getWeather(Consumer<Weatherdata> onLoadDone, Consumer<Throwable> onError) {
         getCurrentLocationGoogle(new LocationCallbackCustom() {
             @Override
             public void onLocationAvailable(Location location) {
                 String lat = String.valueOf(location.getLatitude());
                 String lon = String.valueOf(location.getLongitude());
-                mWeatherAPI.getForecastWeatherOfLocation2(lat, lon, "f839981a9e6195410e563ef35d1e7fb4", "metric", 5)
+                mWeatherAPI.getForecastWeatherOfLocation(lat, lon)
                         .subscribeOn(Schedulers.io())
                         .subscribe(onLoadDone, onError);
             }
+
             @Override
             public void onLocationFailed() {
                 try {

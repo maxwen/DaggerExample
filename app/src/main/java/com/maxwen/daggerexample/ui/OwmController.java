@@ -9,18 +9,15 @@ import android.view.ViewGroup;
 
 import com.jakewharton.rxrelay2.BehaviorRelay;
 import com.maxwen.daggerexample.R;
-import com.maxwen.daggerexample.data.WeatherProvider;
-import com.maxwen.daggerexample.data.model.CurrentWeather;
-import com.maxwen.daggerexample.data.model.ForecastWeather;
+import com.maxwen.daggerexample.data.NorwayWeatherProvider;
+import com.maxwen.daggerexample.data.model.Weatherdata;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
 public class OwmController extends BaseController {
 
     private boolean mLoadDone;
-    private ForecastWeather mForecastWeather;
-    private final BehaviorRelay<CurrentWeather> mCurrentWeatherRelay = BehaviorRelay.create();
-    private final BehaviorRelay<ForecastWeather> mForecastWeatherRelay = BehaviorRelay.create();
+    private final BehaviorRelay<Weatherdata> mWeatherRelay = BehaviorRelay.create();
     private final BehaviorRelay<Throwable> mErrorRelay = BehaviorRelay.create();
     private final BehaviorRelay<Boolean> mLoadingRelay = BehaviorRelay.create();
 
@@ -29,15 +26,10 @@ public class OwmController extends BaseController {
     protected View onCreateView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container) {
         OwmView view = (OwmView) inflater.inflate(R.layout.owm_view, container, false);
         view.setController(this);
-        mCurrentWeatherRelay.observeOn(AndroidSchedulers.mainThread())
+        mWeatherRelay.observeOn(AndroidSchedulers.mainThread())
                 .subscribe(weather -> {
                     mLoadingRelay.accept(false);
-                    view.updateCurrentWeather(weather);
-                });
-        mForecastWeatherRelay.observeOn(AndroidSchedulers.mainThread())
-                .subscribe(weather -> {
-                    mLoadingRelay.accept(false);
-                    view.updateForecastWeather(weather);
+                    view.updateWeather(weather);
                 });
         mErrorRelay.observeOn(AndroidSchedulers.mainThread())
                 .subscribe(e -> {
@@ -57,7 +49,7 @@ public class OwmController extends BaseController {
         return "Weather";
     }
 
-    public WeatherProvider getWeatherProvider() {
+    public NorwayWeatherProvider getWeatherProvider() {
         MainActivity activity = (MainActivity) getActivity();
         return activity.getApplicationComponent().getWeatherProvider();
     }
@@ -74,7 +66,6 @@ public class OwmController extends BaseController {
 
     public void updateWeather() {
         mLoadingRelay.accept(true);
-        getWeatherProvider().getCurrentWeather2(mCurrentWeatherRelay, mErrorRelay);
-        getWeatherProvider().getForecastWeather2(mForecastWeatherRelay, mErrorRelay);
+        getWeatherProvider().getWeather(mWeatherRelay, mErrorRelay);
     }
 }

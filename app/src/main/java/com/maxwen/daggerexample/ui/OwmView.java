@@ -1,19 +1,27 @@
 package com.maxwen.daggerexample.ui;
 
 import android.content.Context;
-import android.graphics.Typeface;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.maxwen.daggerexample.R;
-import com.maxwen.daggerexample.data.model.CurrentWeather;
-import com.maxwen.daggerexample.data.model.ForecastWeather;
-import com.maxwen.daggerexample.data.model.Weather;
+import com.maxwen.daggerexample.data.NorwayWeatherProvider;
+import com.maxwen.daggerexample.data.WeatherInfo;
+import com.maxwen.daggerexample.data.model.Weatherdata;
+import com.squareup.picasso.Picasso;
+
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 
 public class OwmView extends FrameLayout {
 
@@ -21,8 +29,7 @@ public class OwmView extends FrameLayout {
 
     private TextView mWeatherData;
     private Button mWeatherUpdate;
-    private TextView mWeatherIcon;
-    private Typeface mWeatherFont;
+    private ImageView mWeatherIcon;
     private OwmController mController;
     private ProgressBar mProgress;
 
@@ -47,19 +54,6 @@ public class OwmView extends FrameLayout {
             }
         });
         mWeatherIcon = findViewById(R.id.weather_icon);
-        mWeatherFont = Typeface.createFromAsset(getContext().getAssets(), PATH_TO_WEATHER_FONT);
-        mWeatherIcon.setTypeface(mWeatherFont);
-    }
-
-    public void updateCurrentWeather(CurrentWeather weather) {
-        mWeatherData.setText("" + weather.name() + "\n" +
-                weather.coord().lat() + " - " +
-                weather.coord().lon() + "\n" +
-                weather.weather().get(0).main() + "\n" +
-                weather.weather().get(0).description() + "\n" +
-                weather.weather().get(0).icon() + "\n" +
-                weather.main().temp());
-        setWeatherIcon(weather.weather().get(0).icon(), mWeatherIcon);
     }
 
     private int getWeatherIconForDay(int day) {
@@ -79,72 +73,101 @@ public class OwmView extends FrameLayout {
         }
     }
 
-    private void setWeatherIcon(String icon, TextView t) {
-        switch (icon) {
-            case "01d":
-                t.setText(R.string.wi_day_sunny);
-                break;
-            case "02d":
-                t.setText(R.string.wi_cloudy_gusts);
-                break;
-            case "03d":
-                t.setText(R.string.wi_cloud_down);
-                break;
-            case "09d":
-                t.setText(R.string.wi_day_rain_mix);
-                break;
-            case "10d":
-                t.setText(R.string.wi_day_rain_mix);
-                break;
-            case "11d":
-                t.setText(R.string.wi_day_thunderstorm);
-                break;
-            case "13d":
-                t.setText(R.string.wi_day_snow);
-                break;
-            case "01n":
-                t.setText(R.string.wi_night_clear);
-                break;
-            case "04d":
-                t.setText(R.string.wi_cloudy);
-                break;
-            case "04n":
-                t.setText(R.string.wi_night_cloudy);
-                break;
-            case "02n":
-                t.setText(R.string.wi_night_cloudy);
-                break;
-            case "03n":
-                t.setText(R.string.wi_night_cloudy_gusts);
-                break;
-            case "09n":
-                t.setText(R.string.wi_night_cloudy_gusts);
-                break;
-            case "10n":
-                t.setText(R.string.wi_night_cloudy_gusts);
-                break;
-            case "11n":
-                t.setText(R.string.wi_night_rain);
-                break;
-            case "13n":
-                t.setText(R.string.wi_night_snow);
-                break;
-        }
+    private void setWeatherIcon(int conditionCode, ImageView t) {
+        String uri = "https://api.met.no/weatherapi/weathericon/1.1?content_type=image/png&symbol=" + String.valueOf(conditionCode);
+        Picasso.with(getContext()).load(uri).into(t);
     }
 
-    public void updateForecastWeather(ForecastWeather weather) {
-        int i = 1;
-        for (com.maxwen.daggerexample.data.model.List l : weather.list()) {
-            for (Weather dayWeather : l.weather()) {
-                TextView t = findViewById(getWeatherIconForDay(i));
-                if (t == null) {
-                    continue;
-                }
-                t.setTypeface(mWeatherFont);
-                setWeatherIcon(dayWeather.icon(), t);
+    public void updateWeather(Weatherdata weather) {
+        final Date now = new Date();
+        WeatherInfo.DayForecast[] dayList = new WeatherInfo.DayForecast[5];
+        ArrayList<WeatherInfo.DayForecast> dayForecastList = new ArrayList<>();
+        WeatherInfo wi = new WeatherInfo(getContext(),
+                "",
+                "",
+                "",
+                -1,
+                666,
+                0,
+                0f,
+                0,
+                true,
+                dayForecastList,
+                System.currentTimeMillis());
+
+
+        Calendar nowCal = Calendar.getInstance();
+        nowCal.setTimeInMillis(now.getTime());
+        nowCal.add(Calendar.DAY_OF_YEAR, 1);
+        nowCal.set(Calendar.HOUR_OF_DAY, 11);
+        nowCal.set(Calendar.MINUTE, 0);
+        for (int i = 0; i < 5; i++) {
+            //Log.i("updateForecastWeather", "" + timeFormat.format(nowCal.getTimeInMillis()));
+            WeatherInfo.DayForecast df = dayList[i];
+            if (df == null) {
+                df = new WeatherInfo.DayForecast(666, 666, "", -1, "NaN", true);
+                dayList[i] = df;
             }
+            for (com.maxwen.daggerexample.data.model.Weatherdata.Time l : weather.getProduct().getTime()) {
+                Weatherdata.Time dayWeather = l;
+                try {
+                    if (dayWeather.getLocation().getPrecipitation() != null) {
+                        if (l.getToDate().after(nowCal.getTime())) {
+                            if (l.getLocation().getMinTemperature() != null && df.low == 666) {
+                                df.low = l.getLocation().getMinTemperature().getValue().floatValue();
+                                df.high = l.getLocation().getMaxTemperature().getValue().floatValue();
+                                df.conditionCode = l.getLocation().getSymbol().getNumber();
+                                df.condition = l.getLocation().getSymbol().getId();
+                            }
+                        }
+                    }
+                } catch (ParseException e) {
+                }
+            }
+            nowCal.add(Calendar.DAY_OF_YEAR, 1);
+        }
+        dayForecastList.addAll(Arrays.asList(dayList));
+        //Log.i("updateForecastWeather", "" + timeFormat.format(now));
+
+        for (com.maxwen.daggerexample.data.model.Weatherdata.Time l : weather.getProduct().getTime()) {
+            Weatherdata.Time dayWeather = l;
+            try {
+                if (dayWeather.getLocation().getPrecipitation() != null) {
+                    if (l.getToDate().after(now) && l.getLocation().getSymbol() != null && wi.conditionCode == -1) {
+                        //Log.i("updateForecastWeather", "" + timeFormat.format(l.getFromDate()));
+
+                        wi.conditionCode = l.getLocation().getSymbol().getNumber();
+                        wi.condition = l.getLocation().getSymbol().getId();
+                        String city = NorwayWeatherProvider.getCityOfLocation(getContext(),
+                                Double.valueOf(l.getLocation().getLatitude()),
+                                Double.valueOf(l.getLocation().getLongitude()));
+                        wi.city = city;
+                    }
+                } else {
+                    if (l.getFromDate().after(now) && wi.temperature == 666) {
+                        //Log.i("updateForecastWeather", "" + timeFormat.format(l.getFromDate()));
+
+                        wi.temperature = l.getLocation().getTemperature().getValue().floatValue();
+                        wi.wind = l.getLocation().getWindSpeed().getBeaufort().intValue();
+                        wi.windDirection = l.getLocation().getWindDirection().getDeg().intValue();
+                        wi.humidity = l.getLocation().getHumidity().getValue().floatValue();
+                    }
+                }
+            } catch (ParseException e) {
+
+            }
+        }
+        Log.i("Current", "" + wi.getConditionCode() + " " + wi.condition + " " + wi.getTemperature() + " ");
+        setWeatherIcon(wi.getConditionCode(), mWeatherIcon);
+        mWeatherData.setText(wi.toString());
+        int i = 1;
+        for (WeatherInfo.DayForecast t : wi.getForecasts()) {
+            Log.i("Forecast", "" + t.getConditionCode() + " " + t.condition +
+                    " " + t.getLow() + ":" + t.getHigh());
+            setWeatherIcon(t.getConditionCode(), findViewById(getWeatherIconForDay(i)));
             i++;
         }
+
     }
 
     public void setLoading(boolean loading) {

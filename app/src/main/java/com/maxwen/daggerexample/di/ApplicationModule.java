@@ -4,8 +4,10 @@ import android.app.Application;
 import android.content.Context;
 import android.util.Log;
 
-import com.maxwen.daggerexample.data.model.AdapterFactory;
-import com.squareup.moshi.Moshi;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
+import org.simpleframework.xml.strategy.Strategy;
+import org.simpleframework.xml.strategy.TreeStrategy;
 
 import javax.inject.Singleton;
 
@@ -15,7 +17,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.moshi.MoshiConverterFactory;
+import retrofit2.converter.simplexml.SimpleXmlConverterFactory;
 
 /**
  * Created by renegens on 25/07/16.
@@ -49,11 +51,13 @@ public class ApplicationModule {
 
         OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
         httpClient.addInterceptor(logging);
+
+        Strategy strategy = new TreeStrategy("myClass", "myLength");
+        Serializer serializer = new Persister(strategy);
+
         return new Retrofit.Builder()
                 .client(httpClient.build())
-                .addConverterFactory(MoshiConverterFactory.create(new Moshi.Builder()
-                        .add(AdapterFactory.create())
-                        .build()))
+                .addConverterFactory(SimpleXmlConverterFactory.create(serializer))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create());
     }
 }
